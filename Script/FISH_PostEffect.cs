@@ -5,32 +5,22 @@ namespace UnityStandardAssets.ImageEffects
 {
     [ExecuteInEditMode]
     [RequireComponent (typeof(Camera))]
-    [AddComponentMenu ("Image Effects/Camera/Vignette and Chromatic Aberration")]
+    [AddComponentMenu ("FISH")]
     public class FISH_PostEffect : PostEffectsBase
     {
-        public enum AberrationMode
-        {
-            Simple = 0,
-            Advanced = 1,
-        }
 
-
-        public AberrationMode mode = AberrationMode.Simple;
         public float intensity = 0.375f;                    // intensity == 0 disables pre pass (optimization)
-        public float chromaticAberration = 0.2f;
-        public float axialAberration = 0.5f;
         public float blur = 0.0f;                           // blur == 0 disables blur pass (optimization)
         public float blurSpread = 0.75f;
-        public float luminanceDependency = 0.25f;
-        public float blurDistance = 2.5f;
+        public int iteration = 2;
+
+        public Color multiplyColor = Color.white;
+
         public Shader vignetteShader;
         public Shader separableBlurShader;
-        public Shader chromAberrationShader;
-        
         
         private Material m_VignetteMaterial;
         private Material m_SeparableBlurMaterial;
-        private Material m_ChromAberrationMaterial;
 
 
         public override bool CheckResources ()
@@ -39,7 +29,6 @@ namespace UnityStandardAssets.ImageEffects
 
             m_VignetteMaterial = CheckShaderAndCreateMaterial (vignetteShader, m_VignetteMaterial);
             m_SeparableBlurMaterial = CheckShaderAndCreateMaterial (separableBlurShader, m_SeparableBlurMaterial);
-            m_ChromAberrationMaterial = CheckShaderAndCreateMaterial (chromAberrationShader, m_ChromAberrationMaterial);
 
             if (!isSupported)
                 ReportAutoDisable ();
@@ -68,16 +57,14 @@ namespace UnityStandardAssets.ImageEffects
 
             if (doPrepass)
             {
-                color = RenderTexture.GetTemporary (rtW, rtH, 0, source.format);
-
-                // Blur corners
+      			// Blur corners
                 if (Mathf.Abs (blur)>0.0f)
                 {
                     color2A = RenderTexture.GetTemporary (rtW / 2, rtH / 2, 0, source.format);
 
-                    Graphics.Blit (source, color2A, m_ChromAberrationMaterial, 0);
+                    Graphics.Blit (source, color2A);
 
-                    for(int i = 0; i < 2; i++)
+					for(int i = 0; i < iteration; i++)
                     {	// maybe make iteration count tweakable
                         m_SeparableBlurMaterial.SetVector ("offsets",new Vector4 (0.0f, blurSpread * oneOverBaseSize, 0.0f, 0.0f));
                         RenderTexture color2B = RenderTexture.GetTemporary (rtW / 2, rtH / 2, 0, source.format);
@@ -91,23 +78,18 @@ namespace UnityStandardAssets.ImageEffects
                     }
                 }
 
+                //vignette
                 m_VignetteMaterial.SetFloat ("_Intensity", intensity);		// intensity for vignette
                 m_VignetteMaterial.SetFloat ("_Blur", blur);					// blur intensity
                 m_VignetteMaterial.SetTexture ("_VignetteTex", color2A);	// blurred texture
-
-                Graphics.Blit (source, color, m_VignetteMaterial, 0);			// prepass blit: darken & blur corners
+				m_VignetteMaterial.SetColor("_MultiplyColor",multiplyColor);
             }
 
-            m_ChromAberrationMaterial.SetFloat ("_ChromaticAberration", chromaticAberration);
-            m_ChromAberrationMaterial.SetFloat ("_AxialAberration", axialAberration);
-            m_ChromAberrationMaterial.SetVector ("_BlurDistance", new Vector2 (-blurDistance, blurDistance));
-            m_ChromAberrationMaterial.SetFloat ("_Luminance", 1.0f/Mathf.Max(Mathf.Epsilon, luminanceDependency));
+			if (doPrepass) 
+				Graphics.Blit(source,destination,m_VignetteMaterial,0);// prepass blit: darken & blur corners
+			else
+				Graphics.Blit(source,destination);
 
-            if (doPrepass) color.wrapMode = TextureWrapMode.Clamp;
-            else source.wrapMode = TextureWrapMode.Clamp;
-            Graphics.Blit (doPrepass ? color : source, destination, m_ChromAberrationMaterial, mode == AberrationMode.Advanced ? 2 : 1);
-
-            RenderTexture.ReleaseTemporary (color);
             RenderTexture.ReleaseTemporary (color2A);
         }
     }

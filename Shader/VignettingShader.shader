@@ -21,6 +21,8 @@ Shader "Hidden/Vignetting" {
 	half _Blur;
 
 	float4 _MainTex_TexelSize;
+
+	uniform fixed4 _MultiplyColor;
 		
 	v2f vert( appdata_img v ) {
 		v2f o;
@@ -40,7 +42,7 @@ Shader "Hidden/Vignetting" {
 		half2 coords = i.uv;
 		half2 uv = i.uv;
 		
-		coords = (coords - 0.5) * 2.0;		
+		coords = (coords - 0.5) * 2.0;//map 0..1 t0 -1..1
 		half coordDot = dot (coords,coords);
 		half4 color = tex2D (_MainTex, uv);	 
 
@@ -49,7 +51,7 @@ Shader "Hidden/Vignetting" {
 		half4 colorBlur = tex2D (_VignetteTex, i.uv2);
 		color = lerp (color, colorBlur, saturate (_Blur * coordDot));
 		
-		return color * mask;
+		return color * mask * _MultiplyColor;
 	}
 
 	ENDCG 
