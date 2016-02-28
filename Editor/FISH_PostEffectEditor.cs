@@ -2,9 +2,10 @@ using System;
 using UnityEditor;
 using UnityEngine;
 
+
 namespace UnityStandardAssets.ImageEffects
 {
-	[CustomEditor (typeof(FISH_PostEffect))]
+	[CustomEditor (typeof(FISH.ImageEffects.FISH_PostEffect))]
 	class FISH_PostEffectEditor : Editor
     {
         private SerializedObject m_SerObj;
@@ -23,6 +24,9 @@ namespace UnityStandardAssets.ImageEffects
 		private SerializedProperty m_isCornerBlurOn;
 		private SerializedProperty m_isMultiplyColorOn;
 		private SerializedProperty m_isGlowOn;
+
+		private SerializedProperty m_glowType;
+		private SerializedProperty m_hdBlurSettings;
 
 
 
@@ -44,6 +48,9 @@ namespace UnityStandardAssets.ImageEffects
 			m_isCornerBlurOn = m_SerObj.FindProperty("isCornerBlurOn");
 			m_isMultiplyColorOn = m_SerObj.FindProperty("isMultiplyColorOn");
 			m_isGlowOn = m_SerObj.FindProperty("isGlowOn");
+
+			m_glowType = m_SerObj.FindProperty("glowType");
+			m_hdBlurSettings = m_SerObj.FindProperty("hdBlurSettings");
         }
 
 
@@ -100,14 +107,24 @@ namespace UnityStandardAssets.ImageEffects
 			GUI.backgroundColor = bkgColor;
 			m_isGlowOn.boolValue = EditorGUILayout.ToggleLeft ("",m_isGlowOn.boolValue,GUILayout.Width(12f));
 			EditorGUILayout.EndHorizontal();
-
-
 			if (!m_isGlowOn.boolValue) GUI.enabled = false; else GUI.enabled = true;
-			EditorGUILayout.PropertyField (m_glowCamera, new GUIContent("Glow Camera"));
-			EditorGUILayout.Slider (m_glowRadius,0f,10f,new GUIContent("Radius"));
-			EditorGUILayout.IntSlider (m_glowDownsample, 0, 2, new GUIContent("Downsample"));
-			EditorGUILayout.IntSlider (m_glowIteration, 1, 5, new GUIContent("Iteration"));
-			EditorGUILayout.PropertyField (m_glowBlurType, new GUIContent("Blur Type"));
+
+			//glowtype
+			EditorGUILayout.PropertyField(m_glowType);
+			//if use unity blur
+			if (m_glowType.intValue == 0) {
+				EditorGUILayout.PropertyField (m_glowCamera, new GUIContent("Glow Camera"));
+				EditorGUILayout.Slider (m_glowRadius,0f,10f,new GUIContent("Radius"));
+				EditorGUILayout.IntSlider (m_glowDownsample, 0, 2, new GUIContent("Downsample"));
+				EditorGUILayout.IntSlider (m_glowIteration, 1, 5, new GUIContent("Iteration"));
+				EditorGUILayout.PropertyField (m_glowBlurType, new GUIContent("Blur Type"));
+			} 
+			//if use hd blur
+			else {
+				EditorGUILayout.PropertyField(m_hdBlurSettings,true);
+				EditorGUILayout.HelpBox("Total Pixels: " + FISH_PostEffectHelper.totalPixels , MessageType.None);
+				EditorGUILayout.HelpBox("Screen X " + FISH_PostEffectHelper.totalPixels / (Screen.width * Screen.height) , MessageType.None);
+			}
 			GUI.enabled = true;
 
             m_SerObj.ApplyModifiedProperties();

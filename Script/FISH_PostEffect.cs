@@ -6,7 +6,7 @@
 //		a. - first blur the glowRT to glowRT_blurred, [passs 1,pass 2]
 //		b. - multiply source with a tint color to simulate day-night light cycle [pass 3]
 //		c. - then add glowRT_blurred with the source to light up areas [pass 3]
-//		d. - then blend with the not glow plant - glowrt [pass 3]
+//		d. - then blend with the not glow plant - glowrt [pass 3] // b,c,d are merged into a composed shader, params are tinkered inside.
 //		e. - then do the corner blur [pass 4,pass 5]
 //		f. - then do the vignetting [pass 6]
 //		
@@ -14,15 +14,23 @@
 //		Render to a RenderTexture glowRT.
 
 
+// Different Glow Blur performance comparison
+// Unity Blur - 0.08 ms - very good
+
+
 using System;
 using UnityEngine;
+using FISH.ImageEffects;
 
-namespace UnityStandardAssets.ImageEffects
+namespace FISH.ImageEffects
 {
+
+	public enum GlowType { UnityBlur = 0, HDBlur = 1}
+
     [ExecuteInEditMode]
     [RequireComponent (typeof(Camera))]
-    [AddComponentMenu ("FISH")]
-    public class FISH_PostEffect : PostEffectsBase
+    [AddComponentMenu ("FISH/PostEffect")]
+	public class FISH_PostEffect : FISH.ImageEffects.PostEffectsBase
     {
     	//vignette
     	public bool isVignetteOn = true;
@@ -48,16 +56,24 @@ namespace UnityStandardAssets.ImageEffects
 		public Color multiplyColor = Color.white;
 
 		//glow
-		public bool isGlowOn = true;
+
+		public GlowType glowType;
 		public Camera glowCamera;
+		private RenderTexture glowBlurredRT,glowCameraRT;
+
+		//->unity blur
+		public bool isGlowOn = true;
 		public float glowRadius = 3f;					// glow blur radius
 		public int glowDownsample = 1;
         public int glowIteration = 2;
 		public FISH_PostEffectHelper.BlurType glowBlurType;
-		private RenderTexture glowBlurredRT,glowCameraRT;
+
+		//->HDBlur
+		public HDBlurSettings hdBlurSettings;
 
 
-
+		GlowType _glowType;
+		Resolution _rerenderResolution;
 
 
 
@@ -75,10 +91,17 @@ namespace UnityStandardAssets.ImageEffects
             return isSupported;
         }
 
+        void Start() {
+        	FISH_PostEffectHelper.Init();
+        	_glowType = this.glowType;
+			_rerenderResolution = hdBlurSettings.rerenderResolution;
+        }
+
+       
         void Update() {
         	//check and assigne rt to glow camera
         	if (glowCamera!=null ) {
-        		if (glowCamera.targetTexture == null || glowCameraRT == null || (glowCameraRT.width != Screen.width || glowCameraRT.height != Screen.height)) {
+        		if (glowCamera.targetTexture == null || glowCameraRT == null || FISH_PostEffectHelper.IsResolutionChanged() ) {
         			Debug.Log("Glow Camera's target RT is created");
         			glowCameraRT = new RenderTexture (Screen.width,Screen.height,0,RenderTextureFormat.Default);
         			glowCameraRT.Create();
@@ -121,24 +144,49 @@ namespace UnityStandardAssets.ImageEffects
             int rtW = source.width;
             int rtH = source.height;
 
-            bool  doPrepass = (Mathf.Abs(blur)>0.0f || Mathf.Abs(intensity)>0.0f);
-
             float widthOverHeight = (1.0f * rtW) / (1.0f * rtH);
             const float oneOverBaseSize = 1.0f / 512.0f;
 
-           
-          
+			RenderTexture sourceCompose;
+			sourceCompose = RenderTexture.GetTemporary(source.width,source.height,0,source.format);
 
-			//blur the glow camera's rendertexture
-			if (glowCameraRT!=null && isGlowOn) {
-				glowBlurredRT = RenderTexture.GetTemporary(glowCameraRT.width,glowCameraRT.height,0,glowCameraRT.format);
-				FISH_PostEffectHelper.UnityBlur(glowCameraRT,glowBlurredRT,glowBlurType,glowDownsample,glowRadius,glowIteration,m_unityBlurMtl);
+			//here we have glowCameraRT, source, and multiply Color, we need to use UnityBlur or HDBlur to blur the plant
+			//then compose these rt into composeSource
+
+			if (glowCamera != null) {
+				if (glowType == GlowType.UnityBlur) {
+					FISH_PostEffectHelper.UnityBlurGlow(
+						source,
+						sourceCompose,
+						isGlowOn,
+						glowCameraRT,
+						glowBlurType,
+						glowDownsample,
+						glowRadius,
+						glowIteration,
+						m_unityBlurMtl,
+						isMultiplyColorOn,
+						multiplyColor,
+						m_composeMtl
+					);
+				} else if (glowType == GlowType.HDBlur){
+					FISH_PostEffectHelper.HDBlurGlow(
+						source,
+						sourceCompose,
+						isGlowOn,
+						glowCameraRT,
+						hdBlurSettings,
+						isMultiplyColorOn,
+						multiplyColor,
+						m_composeMtl
+					);
+
+				}
+			} else {
+				RenderTexture.ReleaseTemporary(sourceCompose);
+				sourceCompose = source;
 			}
 
-			//compose
-			RenderTexture sourceCompose = RenderTexture.GetTemporary(source.width,source.height,0,source.format);
-			FISH_PostEffectHelper.Compose(source,sourceCompose,isGlowOn,glowCameraRT,glowBlurredRT,isMultiplyColorOn,multiplyColor,m_composeMtl);
-			if (glowCameraRT!=null && isGlowOn) RenderTexture.ReleaseTemporary(glowBlurredRT);
 
 			//corner blur
 			RenderTexture color2A = isCornerBlurOn ? RenderTexture.GetTemporary (rtW / 2, rtH / 2, 0, source.format) : sourceCompose;

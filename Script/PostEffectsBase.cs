@@ -1,7 +1,7 @@
 using System;
 using UnityEngine;
 
-namespace UnityStandardAssets.ImageEffects
+namespace FISH.ImageEffects
 {
     [ExecuteInEditMode]
     [RequireComponent (typeof(Camera))]
