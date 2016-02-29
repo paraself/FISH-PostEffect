@@ -16,48 +16,60 @@ Shader "FISH/Compose_MultiplyColor_Glow" {
     uniform sampler2D _GlowRT;
     uniform sampler2D _GlowBlurRT;
 
-	fixed4 frag_UnityBlur_Glow(v2f_img pixelData) : COLOR
+    //helpers
+    fixed Darkness ( fixed4 c) {
+    	return 0.375 * c.r + 0.5 * c.g + 0.125 * c.b;
+    }
+
+    fixed3 GlowCompose(fixed4 sourceColor,fixed4 glowBlurColor,fixed4 glowPlantColor) {
+    	half4 glowLight;
+       	half3 sourceLight;
+       	half darkness = Darkness(_MultiplyColor);//0 = darkest, 1 = lightest
+       	glowLight = glowBlurColor * (1-darkness * darkness) + glowPlantColor * 0.1 ;//glowlight is the blured plant add a bit of the plant
+       	sourceLight = sourceColor.rgb * (1 - glowPlantColor.a ) + glowPlantColor.rgb ;//premultiply alpha blending the source and the not blurred plant
+       	half3 lightUp = sourceLight * (glowLight + _MultiplyColor); //light up the source
+       	half3 lightOverFlow = glowLight * glowPlantColor.a * 0.5;//add the over flow light, 0.5 the more the light flow more
+       	return lightUp + lightOverFlow;
+    }
+
+    fixed3 NoGlowCompose(fixed4 sourceColor,fixed4 glowPlantColor) {
+    	fixed plantVisibleInNight = 0.2;//how not glowed plant is visible in night
+    	half4 glowLight = _MultiplyColor + glowPlantColor * (1-_MultiplyColor) * plantVisibleInNight;
+       	half3 sourceLight = sourceColor.rgb * (1 - glowPlantColor.a) + glowPlantColor.rgb ;//premultiply alpha blending
+       	return glowLight.rgb * sourceLight;
+    }
+
+    //helpers
+
+	fixed3 frag_UnityBlur_Glow(v2f_img pixelData) : COLOR
     {
     	fixed4 sourceColor = tex2D(_MainTex, pixelData.uv);
        	fixed4 glowBlurColor = tex2D(_GlowBlurRT, pixelData.uv);
        	fixed4 glowPlantColor = tex2D ( _GlowRT , pixelData.uv );
-       	half4 glowLight = _MultiplyColor + ( glowBlurColor * 5 + glowPlantColor * 0.3);
-       	half3 sourceLight = sourceColor.rgb * (1 - glowPlantColor.a) + glowPlantColor.rgb ;//premultiply alpha blending
-       	//half3 sourceLight = sourceColor.rgb + glowPlantColor.rgb ;//premultiply alpha blending
-       	return fixed4(glowLight.rgb * sourceLight,1);
+		return GlowCompose(sourceColor,glowBlurColor * 3,glowPlantColor);
     }
 
-    fixed4 frag_UnityBlur_NoGlow(v2f_img pixelData) : COLOR
+    fixed3 frag_UnityBlur_NoGlow(v2f_img pixelData) : COLOR
     {
     	fixed4 sourceColor = tex2D(_MainTex, pixelData.uv);
        	fixed4 glowPlantColor = tex2D ( _GlowRT , pixelData.uv );
-       	half4 glowLight = _MultiplyColor + glowPlantColor * 1;
-       	half3 sourceLight = sourceColor.rgb * (1 - glowPlantColor.a) + glowPlantColor.rgb ;//premultiply alpha blending
-       	//half3 sourceLight = sourceColor.rgb + glowPlantColor.rgb ;//additive
-       	//half3 sourceLight = sourceColor.rgb * glowLight.rgb;
-       	return fixed4(glowLight.rgb * sourceLight,1);
+		return NoGlowCompose(sourceColor,glowPlantColor);
     }
 
-    fixed4 frag_HDBlur_Glow(v2f_img pixelData) : COLOR
+	fixed3 frag_HDBlur_Glow(v2f_img pixelData) : COLOR
     {
     	fixed4 sourceColor = tex2D(_MainTex, pixelData.uv);
        	fixed4 glowBlurColor = tex2D(_GlowBlurRT, pixelData.uv);
        	fixed4 glowPlantColor = tex2D ( _GlowRT , pixelData.uv );
-       	half4 glowLight = _MultiplyColor + ( glowBlurColor  + glowPlantColor );
-       	half3 sourceLight = sourceColor.rgb * (1 - glowPlantColor.a) + glowPlantColor.rgb ;//premultiply alpha blending
-       	//half3 sourceLight = sourceColor.rgb + glowPlantColor.rgb ;//premultiply alpha blending
-       	return fixed4(glowLight.rgb * sourceLight,1);
+		return GlowCompose(sourceColor,glowBlurColor,glowPlantColor);
+
     }
 
-    fixed4 frag_HDBlur_NoGlow(v2f_img pixelData) : COLOR
+    fixed3 frag_HDBlur_NoGlow(v2f_img pixelData) : COLOR
     {
     	fixed4 sourceColor = tex2D(_MainTex, pixelData.uv);
        	fixed4 glowPlantColor = tex2D ( _GlowRT , pixelData.uv );
-       	half4 glowLight = _MultiplyColor + glowPlantColor * 1;
-       	half3 sourceLight = sourceColor.rgb * (1 - glowPlantColor.a) + glowPlantColor.rgb ;//premultiply alpha blending
-       	//half3 sourceLight = sourceColor.rgb + glowPlantColor.rgb ;//additive
-       	//half3 sourceLight = sourceColor.rgb * glowLight.rgb;
-       	return fixed4(glowLight.rgb * sourceLight,1);
+       	return NoGlowCompose(sourceColor,glowPlantColor);
     }
     
     ENDCG
