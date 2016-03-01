@@ -34,12 +34,12 @@ namespace FISH.ImageEffects
     {
     	//vignette
     	public bool isVignetteOn = true;
-        public float intensity = 0.375f;                    // intensity == 0 disables pre pass (optimization) vignetting intensity
+        public float intensity = 3f;                    // intensity == 0 disables pre pass (optimization) vignetting intensity
 
         //corner blur
         public bool isCornerBlurOn = true;
-        public float blur = 0.0f;                           // blur == 0 disables blur pass (optimization) //corner blur mask radius
-        public float blurSpread = 0.75f;					// corner blur radius
+        public float blur = 1f;                           // blur == 0 disables blur pass (optimization) //corner blur mask radius
+        public float blurSpread = 1.5f;					// corner blur radius
         public int iteration = 2;
 
         public Shader vignetteShader;
@@ -53,7 +53,7 @@ namespace FISH.ImageEffects
 
         //multiply color
         public bool isMultiplyColorOn = true;
-		public Color multiplyColor = Color.white;
+		public Color multiplyColor = Color.black * 0.9f;
 
 		//glow
 
@@ -64,16 +64,15 @@ namespace FISH.ImageEffects
 		//->unity blur
 		public bool isGlowOn = true;
 		public float glowRadius = 3f;					// glow blur radius
-		public int glowDownsample = 1;
-        public int glowIteration = 2;
-		public FISH_PostEffectHelper.BlurType glowBlurType;
+		public int glowDownsample = 2;
+        public int glowIteration = 3;
+		public float glowIntensity = 2.5f;
+		public FISH_PostEffectHelper.BlurType glowBlurType = FISH_PostEffectHelper.BlurType.SgxGauss;
 
 		//->HDBlur
 		public HDBlurSettings hdBlurSettings;
 
 
-		GlowType _glowType;
-		Resolution _rerenderResolution;
 
 
 
@@ -91,10 +90,10 @@ namespace FISH.ImageEffects
             return isSupported;
         }
 
-        void Start() {
+		protected override void Start() {
+			base.Start();
         	FISH_PostEffectHelper.Init();
-        	_glowType = this.glowType;
-			_rerenderResolution = hdBlurSettings.rerenderResolution;
+
         }
 
        
@@ -164,6 +163,7 @@ namespace FISH.ImageEffects
 						glowDownsample,
 						glowRadius,
 						glowIteration,
+						glowIntensity,
 						m_unityBlurMtl,
 						isMultiplyColorOn,
 						multiplyColor,
@@ -226,7 +226,7 @@ namespace FISH.ImageEffects
 
 			if (isCornerBlurOn) RenderTexture.ReleaseTemporary (color2A);
 			if (glowCameraRT) glowCameraRT.DiscardContents();
-			RenderTexture.ReleaseTemporary(sourceCompose);
+			if (glowCamera!=null) RenderTexture.ReleaseTemporary(sourceCompose);
 
 				
         }

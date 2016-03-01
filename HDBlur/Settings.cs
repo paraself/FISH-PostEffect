@@ -5,7 +5,7 @@ namespace FISH.ImageEffects
 	[System.Serializable]
 	public class HDBlurSettings
 	{
-		#region default blur
+		#region hd blur
 		[Tooltip("Use ARGEHalf or RenderTexture.Default")]
 		public bool highPrecision = true;
 
@@ -17,12 +17,12 @@ namespace FISH.ImageEffects
 		public BlendMode blendMode = BlendMode.Additive;
 
 		public DownsampleResolution downsampleResolution = DownsampleResolution.Quarter;
-		public DownsampleBlendMode downsampleBlendMode = DownsampleBlendMode.Max;
+		public DownsampleBlendMode downsampleBlendMode = DownsampleBlendMode.Additive;
 		[Range(0,10)] public int downsampleSteps = 2;
 
 		[Range(0.01f,10f)] public float innerStrength = 1f;
-		[Range(0.01f,10f)] public float outerStrength = 1f;
-		[Range(0.01f,10f)] public float boostStrength = 1f;
+		[Range(0.01f,10f)] public float outerStrength = 5f;
+		[Range(0.01f,10f)] public float boostStrength = 0.5f;
 
 
 		#endregion

@@ -83,7 +83,7 @@ namespace FISH.ImageEffects
         }
 
 
-        protected void Start ()
+        protected virtual void Start ()
 		{
             CheckResources ();
         }

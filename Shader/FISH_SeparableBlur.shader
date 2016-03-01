@@ -33,7 +33,7 @@ Shader "FISH/SeparableBlur" {
 		return o;  
 	}
 		
-	half4 frag (v2f i) : SV_Target {
+	fixed4 frag (v2f i) : SV_Target {
 		half4 color = float4 (0,0,0,0);
 
 		color += 0.40 * tex2D (_MainTex, i.uv);

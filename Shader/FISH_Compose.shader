@@ -6,6 +6,7 @@ Shader "FISH/Compose_MultiplyColor_Glow" {
 	    _GlowRT ("", 2D) = "white" {}
 	    _GlowBlurRT ("", 2D) = "white" {}
 
+
 	}
        
     CGINCLUDE
@@ -15,6 +16,7 @@ Shader "FISH/Compose_MultiplyColor_Glow" {
     uniform fixed4 _MultiplyColor;
     uniform sampler2D _GlowRT;
     uniform sampler2D _GlowBlurRT;
+    uniform float _UnityGlowIntensity;
 
     //helpers
     fixed Darkness ( fixed4 c) {
@@ -32,6 +34,7 @@ Shader "FISH/Compose_MultiplyColor_Glow" {
        	return lightUp + lightOverFlow;
     }
 
+
     fixed3 NoGlowCompose(fixed4 sourceColor,fixed4 glowPlantColor) {
     	fixed plantVisibleInNight = 0.2;//how not glowed plant is visible in night
     	half4 glowLight = _MultiplyColor + glowPlantColor * (1-_MultiplyColor) * plantVisibleInNight;
@@ -44,9 +47,9 @@ Shader "FISH/Compose_MultiplyColor_Glow" {
 	fixed3 frag_UnityBlur_Glow(v2f_img pixelData) : COLOR
     {
     	fixed4 sourceColor = tex2D(_MainTex, pixelData.uv);
-       	fixed4 glowBlurColor = tex2D(_GlowBlurRT, pixelData.uv);
+       	fixed4 glowBlurColor = tex2D(_GlowBlurRT, pixelData.uv) * _UnityGlowIntensity;
        	fixed4 glowPlantColor = tex2D ( _GlowRT , pixelData.uv );
-		return GlowCompose(sourceColor,glowBlurColor * 3,glowPlantColor);
+		return GlowCompose(sourceColor,glowBlurColor,glowPlantColor);
     }
 
     fixed3 frag_UnityBlur_NoGlow(v2f_img pixelData) : COLOR

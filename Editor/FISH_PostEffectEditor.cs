@@ -1,6 +1,7 @@
 using System;
 using UnityEditor;
 using UnityEngine;
+using FISH.ImageEffects;
 
 
 namespace UnityStandardAssets.ImageEffects
@@ -17,6 +18,7 @@ namespace UnityStandardAssets.ImageEffects
 		private SerializedProperty m_glowCamera;
 		private SerializedProperty m_glowRadius;
 		private SerializedProperty m_glowIteration;
+		private SerializedProperty m_glowIntensity;
 		private SerializedProperty m_glowBlurType;
 		private SerializedProperty m_glowDownsample;
 
@@ -41,6 +43,7 @@ namespace UnityStandardAssets.ImageEffects
 			m_glowCamera = m_SerObj.FindProperty ("glowCamera");
 			m_glowRadius = m_SerObj.FindProperty ("glowRadius");
 			m_glowIteration = m_SerObj.FindProperty ("glowIteration");
+			m_glowIntensity = m_SerObj.FindProperty("glowIntensity");
 			m_glowBlurType = m_SerObj.FindProperty ("glowBlurType");
 			m_glowDownsample = m_SerObj.FindProperty ("glowDownsample");
 
@@ -109,14 +112,19 @@ namespace UnityStandardAssets.ImageEffects
 			EditorGUILayout.EndHorizontal();
 			if (!m_isGlowOn.boolValue) GUI.enabled = false; else GUI.enabled = true;
 
+			//glow camera
+			EditorGUILayout.PropertyField (m_glowCamera, new GUIContent("Glow Camera","Everything rendered in Glow Camera will be glowed"));
+			if (m_glowCamera.objectReferenceValue==null)
+				EditorGUILayout.HelpBox("Glow Camera is null! Glow effect is disabled untill you assigan it!",MessageType.Warning);
+
 			//glowtype
 			EditorGUILayout.PropertyField(m_glowType);
 			//if use unity blur
 			if (m_glowType.intValue == 0) {
-				EditorGUILayout.PropertyField (m_glowCamera, new GUIContent("Glow Camera"));
 				EditorGUILayout.Slider (m_glowRadius,0f,10f,new GUIContent("Radius"));
-				EditorGUILayout.IntSlider (m_glowDownsample, 0, 2, new GUIContent("Downsample"));
+				EditorGUILayout.IntSlider (m_glowDownsample, 0, 5, new GUIContent("Downsample"));
 				EditorGUILayout.IntSlider (m_glowIteration, 1, 5, new GUIContent("Iteration"));
+				EditorGUILayout.Slider (m_glowIntensity,0f,10f,new GUIContent("Intensity"));
 				EditorGUILayout.PropertyField (m_glowBlurType, new GUIContent("Blur Type"));
 			} 
 			//if use hd blur
