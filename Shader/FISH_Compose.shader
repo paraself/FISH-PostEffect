@@ -42,28 +42,43 @@ Shader "FISH/Compose_MultiplyColor_Glow" {
        	return glowLight.rgb * sourceLight;
     }
 
+    fixed4 BlurColor ( half2 uv ) {
+		//if its dx, uv starts from top
+    	#if UNITY_UV_STARTS_AT_TOP
+		uv = 1 - uv;
+		#endif
+		return tex2D(_GlowBlurRT, uv);
+    }
+
+    fixed4 PlantColor ( half2 uv) {
+    	#if UNITY_UV_STARTS_AT_TOP
+		uv = 1 - uv;
+		#endif
+		return tex2D(_GlowRT, uv);
+    }
+
     //helpers
 
 	fixed3 frag_UnityBlur_Glow(v2f_img pixelData) : COLOR
     {
     	fixed4 sourceColor = tex2D(_MainTex, pixelData.uv);
-       	fixed4 glowBlurColor = tex2D(_GlowBlurRT, pixelData.uv) * _UnityGlowIntensity;
-       	fixed4 glowPlantColor = tex2D ( _GlowRT , pixelData.uv );
+       	fixed4 glowBlurColor = BlurColor ( pixelData.uv) * _UnityGlowIntensity;
+       	fixed4 glowPlantColor = PlantColor( pixelData.uv );
 		return GlowCompose(sourceColor,glowBlurColor,glowPlantColor);
     }
 
     fixed3 frag_UnityBlur_NoGlow(v2f_img pixelData) : COLOR
     {
     	fixed4 sourceColor = tex2D(_MainTex, pixelData.uv);
-       	fixed4 glowPlantColor = tex2D ( _GlowRT , pixelData.uv );
+       	fixed4 glowPlantColor = PlantColor( pixelData.uv );
 		return NoGlowCompose(sourceColor,glowPlantColor);
     }
 
 	fixed3 frag_HDBlur_Glow(v2f_img pixelData) : COLOR
     {
     	fixed4 sourceColor = tex2D(_MainTex, pixelData.uv);
-       	fixed4 glowBlurColor = tex2D(_GlowBlurRT, pixelData.uv);
-       	fixed4 glowPlantColor = tex2D ( _GlowRT , pixelData.uv );
+       	fixed4 glowBlurColor = BlurColor ( pixelData.uv);
+       	fixed4 glowPlantColor = PlantColor( pixelData.uv );
 		return GlowCompose(sourceColor,glowBlurColor,glowPlantColor);
 
     }
@@ -71,7 +86,7 @@ Shader "FISH/Compose_MultiplyColor_Glow" {
     fixed3 frag_HDBlur_NoGlow(v2f_img pixelData) : COLOR
     {
     	fixed4 sourceColor = tex2D(_MainTex, pixelData.uv);
-       	fixed4 glowPlantColor = tex2D ( _GlowRT , pixelData.uv );
+       	fixed4 glowPlantColor = PlantColor( pixelData.uv );
        	return NoGlowCompose(sourceColor,glowPlantColor);
     }
     
