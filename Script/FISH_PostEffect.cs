@@ -97,7 +97,7 @@ namespace FISH.ImageEffects
 			//Debug.Log("Is Compute Shader supported?"+SystemInfo.supportsComputeShaders);
         }
 
-       
+        bool glowCameraInit = false;
         void Update() {
         	//check and assigne rt to glow camera
         	if (glowCamera!=null ) {
@@ -122,6 +122,20 @@ namespace FISH.ImageEffects
 						rt.DiscardContents();
 						if (Application.isEditor) DestroyImmediate (rt); else Destroy(rt);
 					}
+        		}
+
+        		//if we just assign glow camera
+        		if (glowCameraInit==false) {
+					glowCameraInit = true;
+					glowCamera.clearFlags = CameraClearFlags.SolidColor;
+					glowCamera.backgroundColor = Color.clear;
+					//if (glowCamera.orthographic==false) {
+					glowCamera.orthographic = false;
+					glowCamera.transparencySortMode = TransparencySortMode.Orthographic;
+					Camera cam = this.GetComponent<Camera>();
+
+					glowCamera.fieldOfView = 2f * Mathf.Rad2Deg * Mathf.Atan2 (cam.orthographicSize,Mathf.Abs(cam.transform.position.z));
+					
         		}
 			}
 

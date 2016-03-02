@@ -110,6 +110,7 @@ namespace UnityStandardAssets.ImageEffects
 			GUI.backgroundColor = bkgColor;
 			m_isGlowOn.boolValue = EditorGUILayout.ToggleLeft ("",m_isGlowOn.boolValue,GUILayout.Width(12f));
 			EditorGUILayout.EndHorizontal();
+			EditorGUILayout.HelpBox("1.Glow Camera is perspective and its frustum is matching with the Main Orth Camera so that in the xy plane where z=0, sprite have no parallax effect. 2. You need to set the culling mask of glow camera manually to the layer where the glow obj is.",MessageType.None);
 			if (!m_isGlowOn.boolValue) GUI.enabled = false; else GUI.enabled = true;
 
 			//glow camera
