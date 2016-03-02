@@ -18,6 +18,12 @@ Shader "FISH/HDBlur/Downsample" {
     };
     
     float4 _MainTex_TexelSize;
+
+    // Luma function with Rec.709 HDTV Standard
+    half Luma(half3 c)
+    {
+        return dot(c, half3(0.2126, 0.7152, 0.0722));
+    }
     
     v2f vert (appdata_img v)
     {
@@ -61,6 +67,8 @@ Shader "FISH/HDBlur/Downsample" {
                 
                 fixed4 frag( v2f i ) : COLOR
                 {
+                    
+
                     fixed4 c;
                     c  = tex2D( _MainTex, i.uv[0].xy );
                     c += tex2D( _MainTex, i.uv[1].xy );
@@ -68,6 +76,23 @@ Shader "FISH/HDBlur/Downsample" {
                     c += tex2D( _MainTex, i.uv[3].xy );
                     c *= _Strength;
                     return c;
+
+
+                    /*
+                    fixed4 c0 = tex2D( _MainTex, i.uv[0].xy );
+                    fixed4 c1 = tex2D( _MainTex, i.uv[1].xy );
+                    fixed4 c2 = tex2D( _MainTex, i.uv[2].xy );
+                    fixed4 c3 = tex2D( _MainTex, i.uv[3].xy );
+
+                    // Karis's luma weighted average
+			        half s1w = 1 / (Luma(c0) + 1);
+			        half s2w = 1 / (Luma(c1) + 1);
+			        half s3w = 1 / (Luma(c2) + 1);
+			        half s4w = 1 / (Luma(c3) + 1);
+			        half one_div_wsum = 1.0 / (s1w + s2w + s3w + s4w);
+
+			        return (c0 * s1w + c1 * s2w + c2 * s3w + c3 * s4w) * one_div_wsum;
+                    */
                 }
                 ENDCG
     

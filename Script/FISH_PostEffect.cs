@@ -53,7 +53,7 @@ namespace FISH.ImageEffects
 
         //multiply color
         public bool isMultiplyColorOn = true;
-		public Color multiplyColor = Color.black * 0.9f;
+		public Color multiplyColor = new Color (0f,20f/255f,20f/255f);
 
 		//glow
 
@@ -72,7 +72,7 @@ namespace FISH.ImageEffects
 		//->HDBlur
 		public HDBlurSettings hdBlurSettings;
 
-
+		public ShaderVariantCollection preloadShaders;
 
 
 
@@ -93,42 +93,38 @@ namespace FISH.ImageEffects
 		protected override void Start() {
 			base.Start();
         	FISH_PostEffectHelper.Init();
-
+			if (preloadShaders.isWarmedUp==false) preloadShaders.WarmUp();
+			//Debug.Log("Is Compute Shader supported?"+SystemInfo.supportsComputeShaders);
         }
 
        
         void Update() {
         	//check and assigne rt to glow camera
         	if (glowCamera!=null ) {
-        		if (glowCamera.targetTexture == null || glowCameraRT == null || FISH_PostEffectHelper.IsResolutionChanged() ) {
+        		/*
+        		if (glowCamera.targetTexture == null) 
+        			glowCamera.targetTexture = glowCameraRT;
+				
+				if ( FISH_PostEffectHelper.IsResolutionChanged()) {
+					RenderTexture t = new RenderTexture (Screen.width,Screen.height,0,RenderTextureFormat.Default);
+					glowCamera.targetTexture = t;
+					glowCameraRT.Release();
+					glowCameraRT = t;
+				}*/
+				if (glowCamera.targetTexture == null || glowCameraRT == null || FISH_PostEffectHelper.IsResolutionChanged() ) {
         			Debug.Log("Glow Camera's target RT is created");
         			glowCameraRT = new RenderTexture (Screen.width,Screen.height,0,RenderTextureFormat.Default);
         			glowCameraRT.Create();
         			//discard the old RT
 					RenderTexture rt = glowCamera.targetTexture;
 					glowCamera.targetTexture = glowCameraRT;
-					if (rt) rt.Release();
+					if (rt!=glowCameraRT && rt!=null) {
+						rt.DiscardContents();
+						if (Application.isEditor) DestroyImmediate (rt); else Destroy(rt);
+					}
         		}
-        	}
+			}
 
-        }
-
-        void OnDestroy() {
-        	if (glowCameraRT) {
-        		//glowCameraRT.Release();
-        		//GameObject.Destroy(glowCameraRT);
-        	}
-        }
-
-        void OnPreRender() {
-//        	if (glowCamera!=null && isGlowOn)
-				//glowCameraRT = RenderTexture.GetTemporary(Screen.width,Screen.height,0,RenderTextureFormat.Default);
-//				glowCamera.targetTexture = RenderTexture.GetTemporary(Screen.width,Screen.height,0,RenderTextureFormat.Default);
-        }
-
-        void OnPostRender () {
-//        	if (isGlowOn)
-//        		RenderTexture.ReleaseTemporary(glowCameraRT);
         }
 
         void OnRenderImage (RenderTexture source, RenderTexture destination)
